@@ -17,6 +17,10 @@ on the right, the webpage:
 
 ![example][2]
 
+[Github repo with source code][3]
+
+[More info over at raymii.org][4]
+
 ## Installation
 
 First install the required libraries. 
@@ -68,3 +72,5 @@ GNU GPLv2.
 
 [1]: https://raymii.org/s/blog/Site_updates_raymii.org_now_on_gopher.html
 [2]: https://raymii.org/s/inc/img/txtnws.png
+[3]: https://github.com/RaymiiOrg/to-text.py
+[4]: https://raymii.org/s/software/totext.py-Convert_URL_or_RSS_feed_to_plaintext_with_readability.html
