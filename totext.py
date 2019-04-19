@@ -41,6 +41,11 @@ def cookie_workaround_rd(url):
     if hostname == "rd.nl" or hostname == "www.rd.nl":
         headers['cookieInfoV4'] = "1"
 
+def cookie_workaround_geenstijl(url):
+    hostname = urlparse(url).hostname
+    if hostname == "geenstijl.nl" or hostname == "www.geenstijl.nl":
+        headers['Cookie'] = "cpc=10"
+
 def cookie_workarounds_url(url):
     url = cookie_workaround_ad(url)
     return url
@@ -48,6 +53,7 @@ def cookie_workarounds_url(url):
 def cookie_workarounds_header(url):
     cookie_workaround_tweakers(url)
     cookie_workaround_rd(url)
+    cookie_workaround_geenstijl(url)
 
 def get_url(url):
     url = cookie_workarounds_url(url)
