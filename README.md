@@ -49,8 +49,13 @@ Clone the repository:
                             Sleep X seconds between URLs (only in rss)
       -r, --rss             URL is RSS feed. Parse every item in feed
       -n, --noprint         Dont print converted contents
+      -o, --original        Dont parse content with readability
 
 If you want to run the script via a cronjob, use the `-n` option to not have output.
+
+If an article doesnt look good (for example you get comments instead of content),
+use the `--original` option to just convert the page to text instead of using 
+readability. You will get extra markup and stuff.
 
 If the parsing failed, the article will contain the text: `parsing failed`.
 

@@ -23,6 +23,8 @@ parser.add_argument('-r', '--rss', help="URL is RSS feed. Parse every item in fe
     default=False, action="store_true")
 parser.add_argument('-n', '--noprint', help="Dont print converted contents", 
     default=False, action="store_true")
+parser.add_argument('-o', '--original', help="Dont parse contents with readability.", 
+    default=False, action="store_true")
 args = vars(parser.parse_args())
 
 def cookie_workaround_ad(url):
@@ -62,8 +64,10 @@ def get_url(url):
 
 def convert_doc(html_text):
     return Document(input=html_text, 
-        positive_keywords=["articleColumn", "article", "content"],
-        negative_keywords=["commentColumn", "comment", "comments"])
+        positive_keywords=["articleColumn", "article", "content", 
+        "category_news"],
+        negative_keywords=["commentColumn", "comment", "comments", 
+        "posting_list reply", "posting reply", "reply"])
 
 
 def convert_doc_to_text(doc_summary):
@@ -105,7 +109,10 @@ if args['rss']:
         for post in feed.entries:
             response = get_url(post['link'])
             doc = convert_doc(response.text)
-            text = convert_doc_to_text(doc.summary())
+            if args['original']:
+                text = convert_doc_to_text(doc.content())
+            else:
+                text = convert_doc_to_text(doc.summary())
             title = doc.short_title().encode('utf-8').strip()
             filename = save_doc(text, title, post['link'], post['published_parsed'])
             if not args['noprint']:
@@ -119,7 +126,10 @@ if args['rss']:
                 time.sleep(args['sleep'])
 else:
     doc = convert_doc(response.text)
-    text = convert_doc_to_text(doc.summary())
+    if args['original']:
+        text = convert_doc_to_text(doc.content())
+    else:
+        text = convert_doc_to_text(doc.summary())
     title = doc.short_title().encode('utf-8').strip()
     filename = save_doc(text, title, args['url'])
     if not args['noprint']:
