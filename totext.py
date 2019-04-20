@@ -71,7 +71,9 @@ def convert_doc(html_text):
 
 
 def convert_doc_to_text(doc_summary):
-    doc = html2text.html2text(doc_summary).encode('utf-8').strip()
+    h = html2text.HTML2Text()
+    h.inline_links = False # reference style links
+    doc = h.handle(doc_summary).encode('utf-8').strip()
     if len(doc) > 0:
         return doc
     else:
