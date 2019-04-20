@@ -73,6 +73,7 @@ def convert_doc(html_text):
 def convert_doc_to_text(doc_summary):
     h = html2text.HTML2Text()
     h.inline_links = False # reference style links
+    h.body_width = 72
     doc = h.handle(doc_summary).encode('utf-8').strip()
     if len(doc) > 0:
         return doc
