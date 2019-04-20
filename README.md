@@ -30,7 +30,7 @@ First install the required libraries.
 On Ubuntu:
     
     apt-get install python python-pip #python2
-    pip install html2text requests readability-lxml feedparser
+    pip install html2text requests readability-lxml feedparser lxml
 
 Other distro's, use the `pip` command above.
 

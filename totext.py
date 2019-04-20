@@ -2,8 +2,9 @@
 # Author: Remy van Elst <raymii.org>
 # License: GNU GPLv2
 
-# pip install html2text requests readability-lxml feedparser
+# pip install html2text requests readability-lxml feedparser lxml
 import requests
+import lxml
 from readability import Document
 import html2text
 import argparse 
@@ -33,6 +34,25 @@ def cookie_workaround_ad(url):
         url = "https://www.ad.nl/accept?url=" + url
     return url
 
+def custom_workaround_twitter(url):
+    hostname = urlparse(url).hostname
+    if hostname == "twitter.com" or hostname == "www.twitter.com":
+        session_requests = requests.session()
+        path = urlparse(url).path
+        jar = requests.cookies.RequestsCookieJar()
+        content = session_requests.get(url, headers=headers, timeout=5, 
+            cookies=jar)
+        tree = lxml.html.fromstring(content.text)
+        auth_token = list(set(
+            tree.xpath("//input[@name='authenticity_token']/@value")))[0]
+        url = "https://mobile.twitter.com/" + path
+        payload = {"authenticity_token": auth_token}
+        content2 = session_requests.get(url, headers=headers, timeout=5, 
+            cookies=jar, allow_redirects=True)
+        content2.raise_for_status()
+        args['original'] = True
+        return content2
+       
 def cookie_workaround_tweakers(url):
     hostname = urlparse(url).hostname
     if hostname == "tweakers.net" or hostname == "www.tweakers.net":
@@ -57,10 +77,21 @@ def cookie_workarounds_header(url):
     cookie_workaround_rd(url)
     cookie_workaround_geenstijl(url)
 
+def custom_content_workaround(url):
+    custom_content = custom_workaround_twitter(url)
+    return custom_content
+
 def get_url(url):
     url = cookie_workarounds_url(url)
     cookie_workarounds_header(url)
-    return requests.get(url, headers=headers, timeout=5)
+    custom_content = custom_content_workaround(url)
+    if custom_content:
+        return custom_content
+    r = requests.get(url, headers=headers, timeout=5)
+    r.raise_for_status()
+    return r
+
+
 
 def convert_doc(html_text):
     return Document(input=html_text, 
@@ -78,7 +109,7 @@ def convert_doc_to_text(doc_summary):
     if len(doc) > 0:
         return doc
     else:
-        return "parsing failed."
+        return "Parsing failed."
 
 def save_doc(text, title, url, rssDate=0):
     hostname = urlparse(url).hostname
