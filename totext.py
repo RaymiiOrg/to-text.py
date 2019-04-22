@@ -53,6 +53,11 @@ def custom_workaround_twitter(url):
         args['original'] = True
         return content2
        
+def custom_workaround_hackernews(url):
+    hostname = urlparse(url).hostname
+    if hostname == "news.ycombinator.com":
+        args['original'] = True
+
 def cookie_workaround_tweakers(url):
     hostname = urlparse(url).hostname
     if hostname == "tweakers.net" or hostname == "www.tweakers.net":
@@ -79,6 +84,7 @@ def cookie_workarounds_header(url):
 
 def custom_content_workaround(url):
     custom_content = custom_workaround_twitter(url)
+    custom_workaround_hackernews(url)
     return custom_content
 
 def get_url(url):
@@ -87,7 +93,10 @@ def get_url(url):
     custom_content = custom_content_workaround(url)
     if custom_content:
         return custom_content
-    r = requests.get(url, headers=headers, timeout=5)
+    try:
+        r = requests.get(url, headers=headers, timeout=5)
+    except requests.exceptions.SSLError as e:
+        r = requests.get(url, headers=headers, timeout=5, verify=False)
     r.raise_for_status()
     return r
 
