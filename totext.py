@@ -56,7 +56,6 @@ def custom_workaround_twitter(url):
 def custom_workaround_noparse(url):
     hostname = urlparse(url).hostname
     if hostname == "news.ycombinator.com" or \
-    hostname == "txtn.ws" or \
     hostname == "youtube.com" or \
     hostname == "www.youtube.com":
         args['original'] = True
@@ -118,16 +117,14 @@ def convert_doc_to_text(doc_summary):
     h.inline_links = False # reference style links
     h.body_width = 72
     doc = h.handle(doc_summary).encode('utf-8').strip()
-    if len(doc) > 0:
+    if len(doc) > 100:
         return doc
-    else:
-        return "Parsing failed."
-
+    
 def save_doc(text, title, url, rssDate=0):
     hostname = urlparse(url).hostname
     if not os.path.exists("saved/" + hostname):
         os.makedirs("saved/" + hostname)
-    filename = re.sub(r'[^A-Za-z]', '_', title)
+    filename = re.sub(r'[^A-Za-z0-9]', '_', title)
     if rssDate:
         posttime = datetime.fromtimestamp(mktime(rssDate)).strftime("%Y%m%dT%H%M")
     else:
@@ -159,6 +156,9 @@ if args['rss']:
                 text = convert_doc_to_text(doc.content())
             else:
                 text = convert_doc_to_text(doc.summary())
+                if not text:
+                    text = "Parsing with Readability failed. Original content:\n\n"
+                    text += convert_doc_to_text(doc.content())
             title = doc.short_title().encode('utf-8').strip()
             filename = save_doc(text, title, post['link'], post['published_parsed'])
             if not args['noprint']:
@@ -176,6 +176,9 @@ else:
         text = convert_doc_to_text(doc.content())
     else:
         text = convert_doc_to_text(doc.summary())
+        if not text:
+            text = "Parsing with Readability failed. Original content:\n\n"
+            text += convert_doc_to_text(doc.content())
     title = doc.short_title().encode('utf-8').strip()
     filename = save_doc(text, title, args['url'])
     if not args['noprint']:
