@@ -56,7 +56,9 @@ def custom_workaround_twitter(url):
 def custom_workaround_noparse(url):
     hostname = urlparse(url).hostname
     if hostname == "news.ycombinator.com" or \
-    hostname == "txtn.ws":
+    hostname == "txtn.ws" or \
+    hostname == "youtube.com" or \
+    hostname == "www.youtube.com":
         args['original'] = True
 
 def cookie_workaround_tweakers(url):
