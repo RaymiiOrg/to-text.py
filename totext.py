@@ -53,9 +53,10 @@ def custom_workaround_twitter(url):
         args['original'] = True
         return content2
        
-def custom_workaround_hackernews(url):
+def custom_workaround_noparse(url):
     hostname = urlparse(url).hostname
-    if hostname == "news.ycombinator.com":
+    if hostname == "news.ycombinator.com" or \
+    hostname == "txtn.ws":
         args['original'] = True
 
 def cookie_workaround_tweakers(url):
@@ -84,7 +85,7 @@ def cookie_workarounds_header(url):
 
 def custom_content_workaround(url):
     custom_content = custom_workaround_twitter(url)
-    custom_workaround_hackernews(url)
+    custom_workaround_noparse(url)
     return custom_content
 
 def get_url(url):
