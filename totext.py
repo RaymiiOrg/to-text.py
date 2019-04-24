@@ -40,14 +40,14 @@ def custom_workaround_twitter(url):
         session_requests = requests.session()
         path = urlparse(url).path
         jar = requests.cookies.RequestsCookieJar()
-        content = session_requests.get(url, headers=headers, timeout=5, 
+        content = session_requests.get(url, headers=headers, timeout=8, 
             cookies=jar)
         tree = lxml.html.fromstring(content.text)
         auth_token = list(set(
             tree.xpath("//input[@name='authenticity_token']/@value")))[0]
         url = "https://mobile.twitter.com/" + path
         payload = {"authenticity_token": auth_token}
-        content2 = session_requests.get(url, headers=headers, timeout=5, 
+        content2 = session_requests.get(url, headers=headers, timeout=8, 
             cookies=jar, allow_redirects=True)
         content2.raise_for_status()
         args['original'] = True
@@ -96,9 +96,9 @@ def get_url(url):
     if custom_content:
         return custom_content
     try:
-        r = requests.get(url, headers=headers, timeout=5)
+        r = requests.get(url, headers=headers, timeout=8)
     except requests.exceptions.SSLError as e:
-        r = requests.get(url, headers=headers, timeout=5, verify=False)
+        r = requests.get(url, headers=headers, timeout=8, verify=False)
     r.raise_for_status()
     return r
 
@@ -160,7 +160,14 @@ if args['rss']:
                     text = "Parsing with Readability failed. Original content:\n\n"
                     text += convert_doc_to_text(doc.content())
             title = doc.short_title().encode('utf-8').strip()
-            filename = save_doc(text, title, post['link'], post['published_parsed'])
+            try:
+                rssDate = post['published_parsed']
+            except KeyError:
+                try:
+                    rssDate = post['updated_parsed']
+                except KeyError:
+                    rssDate = post['created_parsed']
+            filename = save_doc(text, title, post['link'], rssDate)
             if not args['noprint']:
                 print("\n\n========================\n\n") 
                 print("# " + title)
