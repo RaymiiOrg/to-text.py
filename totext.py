@@ -26,8 +26,17 @@ parser.add_argument('-n', '--noprint', help="Dont print converted contents",
     default=False, action="store_true")
 parser.add_argument('-o', '--original', help="Dont parse contents with readability.", 
     default=False, action="store_true")
+parser.add_argument('-f', '--forcedownload', 
+    help="Force download even if file seems to be something else than text based on the content-type header.", 
+    default=False, action="store_true")
 args = vars(parser.parse_args())
 
+class mockResponse(object):
+    text = ""
+    def __init__(self, text):
+        super(mockResponse, self).__init__()
+        self.text = text
+        
 def cookie_workaround_ad(url):
     hostname = urlparse(url).hostname
     if hostname == "ad.nl" or hostname == "www.ad.nl":
@@ -42,6 +51,7 @@ def custom_workaround_twitter(url):
         jar = requests.cookies.RequestsCookieJar()
         content = session_requests.get(url, headers=headers, timeout=8, 
             cookies=jar)
+        content.encoding = content.apparent_encoding
         tree = lxml.html.fromstring(content.text)
         auth_token = list(set(
             tree.xpath("//input[@name='authenticity_token']/@value")))[0]
@@ -49,6 +59,7 @@ def custom_workaround_twitter(url):
         payload = {"authenticity_token": auth_token}
         content2 = session_requests.get(url, headers=headers, timeout=8, 
             cookies=jar, allow_redirects=True)
+        content2.encoding = content2.apparent_encoding
         content2.raise_for_status()
         args['original'] = True
         return content2
@@ -100,7 +111,23 @@ def get_url(url):
     except requests.exceptions.SSLError as e:
         r = requests.get(url, headers=headers, timeout=8, verify=False)
     r.raise_for_status()
-    return r
+    r.encoding = r.apparent_encoding
+    if "message" in r.headers['content-type'] or \
+       "image" in r.headers['content-type'] or \
+       "pdf" in r.headers['content-type'] or \
+       "model" in r.headers['content-type'] or \
+       "multipart" in r.headers['content-type'] or \
+       "audio" in r.headers['content-type'] or \
+       "font" in r.headers['content-type'] or \
+       "video" in r.headers['content-type']:
+        if args['forcedownload']:
+            return r
+        else:
+            return mockResponse("""This might not be a html file but something 
+            else, like a PDF or an audio file. Use the --forcedownload flag
+            to download and parse this anyway. The content type reported for 
+            this file is: %s\n\n""" % (r.headers['content-type']))
+    return r 
 
 
 
@@ -167,7 +194,7 @@ if args['rss']:
                     rssDate = post['updated_parsed']
                 except KeyError:
                     rssDate = post['created_parsed']
-            filename = save_doc(text, title, post['link'], rssDate)
+            filename = save_doc(text, title[:150], post['link'], rssDate)
             if not args['noprint']:
                 print("\n\n========================\n\n") 
                 print("# " + title)
@@ -187,7 +214,7 @@ else:
             text = "Parsing with Readability failed. Original content:\n\n"
             text += convert_doc_to_text(doc.content())
     title = doc.short_title().encode('utf-8').strip()
-    filename = save_doc(text, title, args['url'])
+    filename = save_doc(text, title[:150], args['url'])
     if not args['noprint']:
         print("\n\n========================\n\n") 
         print("# " + title)
