@@ -20,6 +20,7 @@ from urlparse import urlparse
 parser = argparse.ArgumentParser(description='Convert HTML page to text using readability and html2text.')
 parser.add_argument('-u','--url', help='URL to convert', required=True)
 parser.add_argument('-s','--sleep', help='Sleep X seconds between URLs (only in rss)', default=3)
+parser.add_argument('-t','--timeout', help='Timeout for HTTP requests', default=30)
 parser.add_argument('-r', '--rss', help="URL is RSS feed. Parse every item in feed", 
     default=False, action="store_true")
 parser.add_argument('-n', '--noprint', help="Dont print converted contents", 
@@ -49,16 +50,16 @@ def custom_workaround_twitter(url):
         session_requests = requests.session()
         path = urlparse(url).path
         jar = requests.cookies.RequestsCookieJar()
-        content = session_requests.get(url, headers=headers, timeout=8, 
-            cookies=jar)
+        content = session_requests.get(url, headers=headers, 
+            timeout=args['timeout'], cookies=jar)
         content.encoding = content.apparent_encoding
         tree = lxml.html.fromstring(content.text)
         auth_token = list(set(
             tree.xpath("//input[@name='authenticity_token']/@value")))[0]
         url = "https://mobile.twitter.com/" + path
         payload = {"authenticity_token": auth_token}
-        content2 = session_requests.get(url, headers=headers, timeout=8, 
-            cookies=jar, allow_redirects=True)
+        content2 = session_requests.get(url, headers=headers, 
+            timeout=args['timeout'], cookies=jar, allow_redirects=True)
         content2.encoding = content2.apparent_encoding
         content2.raise_for_status()
         args['original'] = True
@@ -107,9 +108,11 @@ def get_url(url):
     if custom_content:
         return custom_content
     try:
-        r = requests.get(url, headers=headers, timeout=8)
+        r = requests.get(url, headers=headers, 
+            timeout=args['timeout'])
     except requests.exceptions.SSLError as e:
-        r = requests.get(url, headers=headers, timeout=8, verify=False)
+        r = requests.get(url, headers=headers, 
+            timeout=args['timeout'], verify=False)
     r.raise_for_status()
     r.encoding = r.apparent_encoding
     if "message" in r.headers['content-type'] or \
