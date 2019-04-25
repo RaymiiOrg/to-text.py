@@ -117,6 +117,10 @@ def get_url(url):
         time.sleep(args['sleep'])
         r = requests.get(url, headers=headers, 
             timeout=args['timeout'], verify=False)
+    except requests.exceptions.ReadTimeout as e:
+        time.sleep(args['sleep'])
+        r = requests.get(url, headers=headers, 
+            timeout=args['timeout'], verify=False)
     r.raise_for_status()
     r.encoding = r.apparent_encoding
     if "message" in r.headers['content-type'] or \
