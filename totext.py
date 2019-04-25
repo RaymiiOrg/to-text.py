@@ -113,16 +113,18 @@ def get_url(url):
         r.raise_for_status()
     except requests.exceptions.SSLError as e:
         print("SSL Error. Retrying once")
+        time.sleep(5)
         r = requests.get(url, headers=headers, 
             timeout=args['timeout'], verify=False)
         r.raise_for_status()
     except requests.exceptions.HTTPError as e:
         print("HTTP Error. Retrying once")
+        time.sleep(5)
         r = requests.get(url, headers=headers, 
             timeout=args['timeout'])
     except requests.exceptions.ReadTimeout as e:
         print("ReadTimeout, retrying once")
-        time.sleep(args['sleep'])
+        time.sleep(5)
         r = requests.get(url, headers=headers, 
             timeout=args['timeout'])
         r.raise_for_status()
