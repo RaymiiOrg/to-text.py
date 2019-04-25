@@ -115,34 +115,41 @@ def get_url(url):
         print("SSL Error. Retrying once")
         r = requests.get(url, headers=headers, 
             timeout=args['timeout'], verify=False)
+        r.raise_for_status()
     except requests.exceptions.HTTPError as e:
-        print("HTTP Error, retrying once")
-        time.sleep(args['sleep'])
+        print("HTTP Error. Retrying once")
         r = requests.get(url, headers=headers, 
-            timeout=args['timeout'], verify=False)
+            timeout=args['timeout'])
     except requests.exceptions.ReadTimeout as e:
         print("ReadTimeout, retrying once")
         time.sleep(args['sleep'])
         r = requests.get(url, headers=headers, 
-            timeout=args['timeout'], verify=False)
-    r.raise_for_status()
+            timeout=args['timeout'])
+        r.raise_for_status()
+    
     r.encoding = r.apparent_encoding
-    if "message" in r.headers['content-type'] or \
-       "image" in r.headers['content-type'] or \
-       "pdf" in r.headers['content-type'] or \
-       "model" in r.headers['content-type'] or \
-       "multipart" in r.headers['content-type'] or \
-       "audio" in r.headers['content-type'] or \
-       "font" in r.headers['content-type'] or \
-       "video" in r.headers['content-type']:
-        if args['forcedownload']:
-            return r
-        else:
-            return mockResponse("""This might not be a html file but something 
-            else, like a PDF or an audio file. Use the --forcedownload flag
-            to download and parse this anyway. The content type reported for 
-            this file is: %s\n\n""" % (r.headers['content-type']))
-    return r 
+    try:
+        if "message" in r.headers['content-type'] or \
+           "image" in r.headers['content-type'] or \
+           "pdf" in r.headers['content-type'] or \
+           "model" in r.headers['content-type'] or \
+           "multipart" in r.headers['content-type'] or \
+           "audio" in r.headers['content-type'] or \
+           "font" in r.headers['content-type'] or \
+           "video" in r.headers['content-type']:
+            if args['forcedownload']:
+                return r
+            else:
+                return mockResponse("""This might not be a html file but something 
+                else, like a PDF or an audio file. Use the --forcedownload flag
+                to download and parse this anyway. The content type reported for 
+                this file is: %s\n\n""" % (r.headers['content-type']))
+    except KeyError:
+        pass
+    if len(r.text) > 5:
+        return r 
+    else:
+        return mockResponse("Empty Response")
 
 
 
@@ -192,15 +199,18 @@ if args['rss']:
         sys.exit(1)
     else:
         for post in feed.entries:
-            response = get_url(post['link'])
+            try:
+                response = get_url(post['link'])
+            except Exception as e:
+                response = mockResponse("Failed to get RSS article.")
             doc = convert_doc(response.text)
             if args['original']:
-                text = convert_doc_to_text(doc.content())
+                text = str(convert_doc_to_text(doc.content()))
             else:
                 text = convert_doc_to_text(doc.summary())
                 if not text:
                     text = "Parsing with Readability failed. Original content:\n\n"
-                    text += convert_doc_to_text(doc.content())
+                    text += str(convert_doc_to_text(doc.content()))
             title = doc.short_title().encode('utf-8').strip()
             try:
                 rssDate = post['published_parsed']
@@ -222,12 +232,12 @@ if args['rss']:
 else:
     doc = convert_doc(response.text)
     if args['original']:
-        text = convert_doc_to_text(doc.content())
+        text = str(convert_doc_to_text(doc.content()))
     else:
         text = convert_doc_to_text(doc.summary())
         if not text:
             text = "Parsing with Readability failed. Original content:\n\n"
-            text += convert_doc_to_text(doc.content())
+            text += str(convert_doc_to_text(doc.content()))
     title = doc.short_title().encode('utf-8').strip()
     filename = save_doc(text, title[:150], args['url'])
     if not args['noprint']:
