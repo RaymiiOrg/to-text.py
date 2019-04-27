@@ -16,6 +16,11 @@ import os
 from datetime import datetime
 from time import mktime
 from urlparse import urlparse
+import urllib3
+#The only insecure call we do is on purpose.
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 parser = argparse.ArgumentParser(description='Convert HTML page to text using readability and html2text.')
 parser.add_argument('-u','--url', help='URL to convert', required=True)
