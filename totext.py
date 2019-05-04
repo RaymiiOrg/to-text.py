@@ -173,7 +173,7 @@ def convert_doc_to_text(doc_summary):
     h.inline_links = False # reference style links
     h.body_width = 72
     doc = h.handle(doc_summary).encode('utf-8').strip()
-    if len(doc) > 100:
+    if len(doc) > 500:
         return doc
     
 def save_doc(text, title, url, rssDate=0):
