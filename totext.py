@@ -82,6 +82,20 @@ def cookie_workaround_tweakers(url):
     if hostname == "tweakers.net" or hostname == "www.tweakers.net":
         headers['X-Cookies-Accepted'] = '1'
 
+def custom_workaround_verisimilitudes(url):
+    hostname = urlparse(url).hostname
+    if hostname == "verisimilitudes.net" or hostname == "www.verisimilitudes.net":
+        path = urlparse(url).path.replace("/","",1)
+        if(path):
+            response = get_url(args['url'], workarounds=False)
+            doc = convert_doc(response.text)
+            text = str(convert_doc_to_text(doc.content()))
+            if not text:
+                title = "Parsing failed"
+            else:
+                title = doc.short_title().encode('utf-8').strip()
+            save_gophermap("", title, hostname, 1, path, 70)
+
 def cookie_workaround_rd(url):
     hostname = urlparse(url).hostname
     if hostname == "rd.nl" or hostname == "www.rd.nl":
@@ -104,14 +118,16 @@ def cookie_workarounds_header(url):
 def custom_content_workaround(url):
     custom_content = custom_workaround_twitter(url)
     custom_workaround_noparse(url)
+    custom_workaround_verisimilitudes(url)
     return custom_content
 
-def get_url(url):
-    url = cookie_workarounds_url(url)
-    cookie_workarounds_header(url)
-    custom_content = custom_content_workaround(url)
-    if custom_content:
-        return custom_content
+def get_url(url, workarounds=True):
+    if workarounds:
+        url = cookie_workarounds_url(url)
+        cookie_workarounds_header(url)
+        custom_content = custom_content_workaround(url)
+        if custom_content:
+            return custom_content
     try:
         r = requests.get(url, headers=headers, 
             timeout=args['timeout'])
@@ -159,7 +175,6 @@ def get_url(url):
         return mockResponse("Empty Response")
 
 
-
 def convert_doc(html_text):
     return Document(input=html_text, 
         positive_keywords=["articleColumn", "article", "content", 
@@ -195,6 +210,25 @@ def save_doc(text, title, url, rssDate=0):
             textfile.write("\n\n")
             textfile.write(text)  
     return filename
+
+def save_gophermap(text, title, server, gophertype, filename, gopherport):
+    if not os.path.exists("saved/" + server):
+        os.makedirs("saved/" + server)
+    posttime = datetime.now().strftime("%Y%m%dT%H%M")
+    if not os.path.exists("saved/" + server + "/" + posttime):
+        os.makedirs("saved/" + server + "/" + posttime)
+    gmfile = "saved/" + server + "/" + posttime + "/gophermap"
+    if not os.path.exists(gmfile):
+        with open(gmfile, "w") as gophermap:
+            gophermap.write("i\t/\tlocalhost\t70\n")
+            gophermap.write("iThis article is available via Gopher. \t/\tlocalhost\t70\n")
+            gophermap.write("iPlease follow the link\t/\tlocalhost\t70\n")
+            gophermap.write(("%i%s on %s\t/%s\t%s\t%i\n") % (gophertype, 
+                title, server, filename, server, gopherport))
+            gophermap.write("i\t/\tlocalhost\t70\n")
+            gophermap.write(("iLast update: %s\t/\tlocalhost\t70\n") % (posttime))
+            gophermap.write(text)
+    return gmfile
 
 headers = {'User-Agent': 'Tiny Tiny RSS/19.2 (1a484ec) (http://tt-rss.org/)'} 
 
